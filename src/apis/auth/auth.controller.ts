@@ -36,6 +36,7 @@ export class AuthController {
     return { message: '로그인을 성공적으로 완료하였습니다.' };
   }
 
+  // 리프레쉬 토큰
   @UseGuards(RefreshAuthGuard)
   @Post('refresh')
   async refresh(
@@ -48,5 +49,12 @@ export class AuthController {
 
     res.setHeader('Authorization', `Bearer ${accessToken}`);
     return { message: 'refresh' };
+  }
+
+  // 로그아웃
+  @Get('logout')
+  logout(@Res({ passthrough: true }) res: Response): void {
+    res.cookie('accessToken', '', { expires: new Date(0) });
+    res.cookie('refreshToken', '', { expires: new Date(0) });
   }
 }
