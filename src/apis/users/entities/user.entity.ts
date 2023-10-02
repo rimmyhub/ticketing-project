@@ -24,6 +24,9 @@ export class User {
   @Column()
   nickName: string;
 
+  @Column({ nullable: true })
+  imageUrl: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
