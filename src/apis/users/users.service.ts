@@ -1,26 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { User } from './entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import {
+  IUsersServiceCreateUser,
+  IUsersServiceFindByEmail,
+} from './interfaces/users-service.interface';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+  ) {}
+
+  // 유저 생성하기
+  async createUser({ createUserDto }: IUsersServiceCreateUser): Promise<User> {
+    const { email, password, nickName } = createUserDto;
+
+    const user = await this.findByEmail({ email });
+    if (user) throw new ConflictException('이미 등록된 이메일입니다.');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await this.usersRepository.save({
+      email,
+      password: hashedPassword,
+      nickName,
+    });
+
+    return result;
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  // 유저 이메일 찾기
+  async findByEmail({ email }: IUsersServiceFindByEmail): Promise<User> {
+    return await this.usersRepository.findOne({ where: { email } });
   }
 }

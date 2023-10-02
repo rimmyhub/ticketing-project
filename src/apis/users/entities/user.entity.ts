@@ -22,7 +22,7 @@ export class User {
   password: string;
 
   @Column()
-  nickname: string;
+  nickName: string;
 
   @CreateDateColumn()
   createdAt: Date;
