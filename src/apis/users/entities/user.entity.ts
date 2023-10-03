@@ -1,5 +1,6 @@
 import { Point } from 'src/apis/points/entities/point.entity';
 import { Reservation } from 'src/apis/reservations/entities/reservation.entity';
+import { Show } from 'src/apis/shows/entities/show.entity';
 import {
   Column,
   CreateDateColumn,
@@ -43,4 +44,6 @@ export class User {
     cascade: true,
   })
   reservations: Reservation[];
+
+  @OneToMany(() => Show, (show) => show.user, { cascade: true }) shows: Show[];
 }
