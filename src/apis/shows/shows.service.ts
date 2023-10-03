@@ -17,10 +17,11 @@ import {
   IShowsServiceUpdateShow,
 } from './interfaces/shows-service.interface';
 import { Show } from './entities/show.entity';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../users/users.service';
 import { MessageResDto } from 'src/commons/dto/message-res.dto';
+import { SearchReqDto } from 'src/commons/dto/page-req.dto';
 
 @Injectable()
 export class ShowsService {
@@ -29,6 +30,45 @@ export class ShowsService {
     private readonly showsRepository: Repository<Show>,
     private readonly usersService: UsersService,
   ) {}
+
+  // 공연 검색
+  async searchShow({ keyword }: SearchReqDto): Promise<Show[]> {
+    const shows = await this.showsRepository
+      .createQueryBuilder('show')
+      .select([
+        'show.title',
+        'show.description',
+        'show.showTime',
+        'show.maxSeats',
+      ])
+      .where(
+        'show.title LIKE :keyword OR show.description LIKE :keyword OR show.showTime LIKE :keyword OR show.maxSeats LIKE :keyword',
+        { keyword: `%${keyword}%` },
+      )
+      .getMany();
+
+    if (shows.length === 0) {
+      throw new NotFoundException('검색 결과가 존재하지 않습니다.');
+    }
+
+    return shows;
+  }
+
+  // // 공연 검색
+  // async searchShow({ searchReqDto }: IShowsServiceSearchShow): Promise<Show[]> {
+  //   const { page, size, keyword } = searchReqDto;
+  //   const shows = await this.showsRepository.find({
+  //     where: [
+  //       { title: Like(`%${keyword}%`) },
+  //       { description: Like(`%${keyword}%`) },
+  //     ],
+  //     order: { createdAt: 'DESC' },
+  //     take: size,
+  //     skip: (page - 1) * size,
+  //   });
+
+  //   return shows;
+  // }
 
   // 공연 생성
   async createShow({
@@ -118,7 +158,6 @@ export class ShowsService {
       throw new ForbiddenException('공연을 삭제할 권한이 없습니다');
 
     await this.showsRepository.remove(show);
-
     return { message: '공연이 삭제되었습니다.' };
   }
 
