@@ -1,6 +1,7 @@
 import { PageReqDto } from 'src/commons/dto/page-req.dto';
 import { CreateShowDto } from '../dto/create-show.dto';
 import { UpdateShowDto } from '../dto/update-show.dto';
+import { SearchReqDto } from 'src/commons/dto/page-req.dto';
 
 export interface IShowsServiceCreateShow {
   userId: string;

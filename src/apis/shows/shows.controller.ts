@@ -15,12 +15,26 @@ import { UpdateShowDto } from './dto/update-show.dto';
 import { AccessAuthGuard } from '../auth/guard/auth.guard';
 import { User, UserAfterAuth } from 'src/commons/decorators/user.decorator';
 import { Show } from './entities/show.entity';
-import { PageReqDto } from 'src/commons/dto/page-req.dto';
+import { PageReqDto, SearchReqDto } from 'src/commons/dto/page-req.dto';
 import { MessageResDto } from 'src/commons/dto/message-res.dto';
 
 @Controller('api/shows')
 export class ShowsController {
   constructor(private readonly showsService: ShowsService) {}
+
+  // 공연 검색
+  @Post('search')
+  async searchShow(@Body('keyword') keyword: string): Promise<Show[]> {
+    const shows = await this.showsService.searchShow({ keyword });
+    return shows;
+  }
+
+  // // 공연 검색
+  // @Get('search')
+  // async searchShow(@Query() searchReqDto: SearchReqDto): Promise<Show[]> {
+  //   const shows = await this.showsService.searchShow({ searchReqDto });
+  //   return shows;
+  // }
 
   // 공연 생성
   @UseGuards(AccessAuthGuard)
