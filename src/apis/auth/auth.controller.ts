@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { MessageResDto } from 'src/commons/message-res.dto';
+import { MessageResDto } from 'src/commons/dto/message-res.dto';
 import { Response } from 'express'; //일반적으로 Node.js와 Express.js를 사용하여 웹 애플리케이션을 개발할 때, Response 객체에 cookie 속성이 내장되어 있지 않습니다.대신에, cookie를 express 미들웨어를 사용하여 설정하고 응답 헤더에 쿠키 정보를 추가해야 합니다.
 import { RefreshAuthGuard } from './guard/auth.guard';
 import { User, UserAfterAuth } from 'src/commons/decorators/user.decorator';

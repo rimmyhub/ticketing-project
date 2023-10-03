@@ -41,18 +41,6 @@ export class UsersService {
     return result;
   }
 
-  // 유저 이메일 찾기
-  async findByEmail({ email }: IUsersServiceFindByEmail): Promise<User> {
-    return await this.usersRepository.findOne({ where: { email } });
-  }
-
-  // 유저 아이디 찾기
-  async findById({ userId }: IUsersServiceFindById): Promise<User> {
-    return await this.usersRepository.findOne({
-      where: { id: userId },
-    });
-  }
-
   // 내 정보 조회
   async findUser({ userId }: IUsersServiceFindUser): Promise<User> {
     const user = await this.findById({ userId });
@@ -83,5 +71,17 @@ export class UsersService {
     if (!user) throw new NotFoundException();
 
     await this.usersRepository.remove(user);
+  }
+
+  // 유저 이메일 찾기
+  async findByEmail({ email }: IUsersServiceFindByEmail): Promise<User> {
+    return await this.usersRepository.findOne({ where: { email } });
+  }
+
+  // 유저 아이디 찾기
+  async findById({ userId }: IUsersServiceFindById): Promise<User> {
+    return await this.usersRepository.findOne({
+      where: { id: userId },
+    });
   }
 }
