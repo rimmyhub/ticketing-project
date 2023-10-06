@@ -1,26 +1,55 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
+import { ISeatsServiceCreateSeat } from './interfaces/seat-service.interface';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Seat } from './entities/seat.entity';
+import { Repository } from 'typeorm';
+import { ShowsService } from '../shows/shows.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class SeatsService {
-  create(createSeatDto: CreateSeatDto) {
-    return 'This action adds a new seat';
-  }
+  constructor(
+    @InjectRepository(Seat)
+    private readonly seatsRepository: Repository<Seat>,
+    private readonly usersService: UsersService,
+    private readonly showsService: ShowsService,
+  ) {}
 
-  findAll() {
-    return `This action returns all seats`;
-  }
+  async createSeat({ userId, showId, createSeatDto }: ISeatsServiceCreateSeat) {
+    const { grade, price, seatNumber } = createSeatDto;
 
-  findOne(id: number) {
-    return `This action returns a #${id} seat`;
-  }
+    const user = await this.usersService.findById({ userId });
+    if (!user) throw new NotFoundException();
 
-  update(id: number, updateSeatDto: UpdateSeatDto) {
-    return `This action updates a #${id} seat`;
-  }
+    const show = await this.showsService.findByShowId({ showId });
+    if (!show) throw new NotFoundException('공연을 찾을 수 없습니다.');
 
-  remove(id: number) {
-    return `This action removes a #${id} seat`;
+    if (show.user.id !== userId)
+      throw new ForbiddenException('좌석을 생성할 권한이 없습니다');
+
+    const existingSeat = await this.seatsRepository.findOne({
+      where: {
+        grade: grade,
+        seatNumber: seatNumber,
+      },
+    });
+    if (existingSeat) {
+      throw new BadRequestException('이미 생성된 좌석입니다.');
+    }
+
+    return await this.seatsRepository.save({
+      user: user,
+      show: show,
+      seatNumber: seatNumber,
+      grade: grade,
+      price: price,
+    });
   }
 }
