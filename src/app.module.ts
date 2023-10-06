@@ -6,7 +6,6 @@ import { PointsModule } from './apis/points/points.module';
 import { ShowsModule } from './apis/shows/shows.module';
 import { ReservationsModule } from './apis/reservations/reservations.module';
 import { SeatsModule } from './apis/seats/seats.module';
-import { SeatReservationsModule } from './apis/seat-reservations/seat-reservations.module';
 import { AuthModule } from './apis/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
@@ -19,7 +18,6 @@ import { ConfigModule } from '@nestjs/config';
     ShowsModule,
     ReservationsModule,
     SeatsModule,
-    SeatReservationsModule,
     AuthModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
