@@ -1,5 +1,5 @@
 import { Point } from 'src/apis/points/entities/point.entity';
-import { SeatReservation } from 'src/apis/seat-reservations/entities/seat-reservation.entity';
+import { SeatReservation } from 'src/apis/reservations/entities/seat-reservation.entity';
 import { Show } from 'src/apis/shows/entities/show.entity';
 import { User } from 'src/apis/users/entities/user.entity';
 import {
