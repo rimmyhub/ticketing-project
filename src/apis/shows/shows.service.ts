@@ -76,7 +76,7 @@ export class ShowsService {
     userId,
   }: IShowsServiceCreateShow): Promise<Show> {
     const user = await this.usersService.findById({ userId });
-    if (!user) new NotFoundException();
+    if (!user) new NotFoundException('로그인이 필요합니다.');
 
     return await this.showsRepository.save({
       user: { id: userId },

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
-import { ISeatsServiceCreateSeat } from './interfaces/seat-service.interface';
+import { ISeatsServiceCreateSeat } from './interfaces/seats-service.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Seat } from './entities/seat.entity';
 import { Repository } from 'typeorm';
@@ -22,7 +22,11 @@ export class SeatsService {
     private readonly showsService: ShowsService,
   ) {}
 
-  async createSeat({ userId, showId, createSeatDto }: ISeatsServiceCreateSeat) {
+  async createSeat({
+    userId,
+    showId,
+    createSeatDto,
+  }: ISeatsServiceCreateSeat): Promise<Seat> {
     const { grade, price, seatNumber } = createSeatDto;
 
     const user = await this.usersService.findById({ userId });

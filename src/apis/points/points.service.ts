@@ -1,26 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { CreatePointDto } from './dto/create-point.dto';
 import { UpdatePointDto } from './dto/update-point.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Point } from './entities/point.entity';
+import { Repository } from 'typeorm';
+import { IPointsServiceCreatePoint } from './interfaces/points-service.interface';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class PointsService {
-  create(createPointDto: CreatePointDto) {
-    return 'This action adds a new point';
-  }
+  constructor(
+    @InjectRepository(Point)
+    private readonly pointsRepository: Repository<Point>,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
+  ) {}
 
-  findAll() {
-    return `This action returns all points`;
-  }
+  async createPoint({
+    userId,
+    createPointDto,
+  }: IPointsServiceCreatePoint): Promise<Point> {
+    const user = await this.usersService.findById({ userId });
+    if (!user) new NotFoundException();
 
-  findOne(id: number) {
-    return `This action returns a #${id} point`;
-  }
-
-  update(id: number, updatePointDto: UpdatePointDto) {
-    return `This action updates a #${id} point`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} point`;
+    return await this.pointsRepository.save({
+      user: { id: userId },
+      ...createPointDto,
+    });
   }
 }
