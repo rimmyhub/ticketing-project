@@ -1,11 +1,13 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Point, Repository } from 'typeorm';
 import {
   IUsersServiceCreateUser,
   IUsersServiceDeleteUser,
@@ -15,12 +17,16 @@ import {
   IUsersServiceUpdateUser,
 } from './interfaces/users-service.interface';
 import * as bcrypt from 'bcrypt';
+import { PointsService } from '../points/points.service';
+import { IPointsServiceCreatePoint } from '../points/interfaces/points-service.interface';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @Inject(forwardRef(() => PointsService))
+    private readonly pointsService: PointsService,
   ) {}
 
   // 유저 생성하기
@@ -32,13 +38,25 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await this.usersRepository.save({
+    const newUser = await this.usersRepository.save({
       email,
       password: hashedPassword,
       nickName,
     });
 
-    return result;
+    // / 가입 축하금 포인트 생성 및 할당
+    const createPointDto: IPointsServiceCreatePoint = {
+      userId: newUser.id, // 새로 생성한 유저의 ID
+      createPointDto: {
+        point: 10000000, // 가입 축하금
+        reason: '가입 축하금', // 가입 축하금 설명
+      },
+    };
+
+    // PointsService의 createPoint 메서드를 호출하여 포인트 생성 및 할당
+    await this.pointsService.createPoint(createPointDto);
+
+    return newUser;
   }
 
   // 내 정보 조회

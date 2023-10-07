@@ -13,6 +13,7 @@ import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
 import { AccessAuthGuard } from '../auth/guard/auth.guard';
 import { User, UserAfterAuth } from 'src/commons/decorators/user.decorator';
+import { Seat } from './entities/seat.entity';
 
 @Controller('api/seats')
 export class SeatsController {
@@ -25,7 +26,7 @@ export class SeatsController {
     @User() user: UserAfterAuth,
     @Param('showId') showId: string,
     @Body() createSeatDto: CreateSeatDto,
-  ) {
+  ): Promise<Seat> {
     const seat = await this.seatsService.createSeat({
       userId: user.id,
       showId,
