@@ -32,4 +32,20 @@ export class PointsController {
     });
     return point;
   }
+
+  // 포인트 수정
+  @UseGuards(AccessAuthGuard)
+  @Patch(':pointId')
+  async updatePoint(
+    @Param('pointId') pointId: string,
+    @User() user: UserAfterAuth,
+    @Body() updatePointDto: UpdatePointDto,
+  ) {
+    const point = await this.pointsService.updatePoint({
+      userId: user.id,
+      pointId,
+      updatePointDto,
+    });
+    return point;
+  }
 }
