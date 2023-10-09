@@ -17,10 +17,44 @@ import { User, UserAfterAuth } from 'src/commons/decorators/user.decorator';
 import { Show } from './entities/show.entity';
 import { PageReqDto, SearchReqDto } from 'src/commons/dto/page-req.dto';
 import { MessageResDto } from 'src/commons/dto/message-res.dto';
+import { CreateReservationDto } from '../reservations/dto/create-reservation.dto';
+import { CreateSeatDto } from '../seats/dto/create-seat.dto';
 
 @Controller('api/shows')
 export class ShowsController {
   constructor(private readonly showsService: ShowsService) {}
+
+  // // 예매 가능 좌석확인
+  // @UseGuards(AccessAuthGuard)
+  // @Get('seats')
+  // async getAvailableSeats(
+  //   @Param('showId') showId: string,
+  //   @User() user: UserAfterAuth,
+  // ) {
+  //   const seats = await this.showsService.getAvailableSeats({
+  //     showId,
+  //     userId: user.id,
+  //   });
+  //   return seats;
+  // }
+
+  // 공연 좌석 지정해서 예매
+  @UseGuards(AccessAuthGuard)
+  @Post(':showId/seat-reservation')
+  async seatReservation(
+    @User() user: UserAfterAuth,
+    @Param('showId') showId: string,
+    @Body() createReservationDto: CreateReservationDto,
+    @Body() createSeatDto: CreateSeatDto,
+  ) {
+    const seats = await this.showsService.seatReservation({
+      userId: user.id,
+      showId,
+      createReservationDto,
+      createSeatDto,
+    });
+    return seats;
+  }
 
   // 공연 검색
   @Post('search')
@@ -28,13 +62,6 @@ export class ShowsController {
     const shows = await this.showsService.searchShow({ keyword });
     return shows;
   }
-
-  // // 공연 검색
-  // @Get('search')
-  // async searchShow(@Query() searchReqDto: SearchReqDto): Promise<Show[]> {
-  //   const shows = await this.showsService.searchShow({ searchReqDto });
-  //   return shows;
-  // }
 
   // 공연 생성
   @UseGuards(AccessAuthGuard)

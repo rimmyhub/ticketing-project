@@ -12,7 +12,7 @@ import {
 
 @Entity()
 export class Point {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()

@@ -62,7 +62,7 @@ export class UsersService {
   // 내 정보 조회
   async findUser({ userId }: IUsersServiceFindUser): Promise<User> {
     const user = await this.findById({ userId });
-    if (!user) new NotFoundException();
+    if (!user) new NotFoundException('해당 유저를 찾을 수 없습니다.');
     return user;
   }
 
@@ -73,7 +73,7 @@ export class UsersService {
   }: IUsersServiceUpdateUser): Promise<User> {
     const user = await this.findById({ userId });
 
-    if (!user) throw new NotFoundException();
+    if (!user) throw new NotFoundException('해당 유저를 찾을 수 없습니다.');
 
     const updateUser = await this.usersRepository.save({
       ...user,
@@ -100,6 +100,7 @@ export class UsersService {
   async findById({ userId }: IUsersServiceFindById): Promise<User> {
     return await this.usersRepository.findOne({
       where: { id: userId },
+      relations: ['points'],
     });
   }
 }
