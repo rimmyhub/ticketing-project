@@ -1,6 +1,5 @@
 import { SeatReservation } from 'src/apis/reservations/entities/seat-reservation.entity';
 import { Show } from 'src/apis/shows/entities/show.entity';
-import { GRADE } from 'src/commons/enum/seat.enum';
 import {
   Column,
   CreateDateColumn,
@@ -20,8 +19,8 @@ export class Seat {
   @Column()
   seatNumber: number;
 
-  @Column({ type: 'enum', enum: GRADE })
-  grade: GRADE;
+  @Column()
+  grade: string;
 
   @Column()
   price: number;

@@ -1,9 +1,9 @@
-export enum GRADE {
-  VIP = 'VIP',
-  R = 'R',
-  S = 'S',
-  A = 'A',
-}
+// export enum GRADE {
+//   VIP = 'VIP',
+//   R = 'R',
+//   S = 'S',
+//   A = 'A',
+// }
 
 // export const PRICES = {
 //   [GRADE.VIP]: 140000,

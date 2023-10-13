@@ -24,36 +24,34 @@ import { CreateSeatDto } from '../seats/dto/create-seat.dto';
 export class ShowsController {
   constructor(private readonly showsService: ShowsService) {}
 
-  // // 예매 가능 좌석확인
-  // @UseGuards(AccessAuthGuard)
-  // @Get('seats')
-  // async getAvailableSeats(
-  //   @Param('showId') showId: string,
-  //   @User() user: UserAfterAuth,
-  // ) {
-  //   const seats = await this.showsService.getAvailableSeats({
-  //     showId,
-  //     userId: user.id,
-  //   });
-  //   return seats;
-  // }
-
   // 공연 좌석 지정해서 예매
   @UseGuards(AccessAuthGuard)
-  @Post(':showId/seat-reservation')
+  @Post(':showId/reservation')
   async seatReservation(
     @User() user: UserAfterAuth,
     @Param('showId') showId: string,
-    @Body() createReservationDto: CreateReservationDto,
     @Body() createSeatDto: CreateSeatDto,
   ) {
-    const seats = await this.showsService.seatReservation({
+    const seat = await this.showsService.seatReservation({
       userId: user.id,
       showId,
-      createReservationDto,
       createSeatDto,
     });
-    return seats;
+    return seat;
+  }
+
+  // 예매 취소
+  @UseGuards(AccessAuthGuard)
+  @Delete(':reservationId/cancel-reservation')
+  async cancelReservation(
+    @User() user: UserAfterAuth,
+    @Param('seatReservationId') seatReservationId: string,
+  ) {
+    const reservation = await this.showsService.cancelReservation({
+      userId: user.id,
+      seatReservationId,
+    });
+    return reservation;
   }
 
   // 공연 검색

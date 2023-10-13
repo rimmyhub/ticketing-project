@@ -46,6 +46,10 @@ export interface IShowsServiceGetAvailableSeat {
 export interface IShowsServiceSeatReservationSeat {
   userId: string;
   showId: string;
-  createReservationDto: CreateReservationDto;
   createSeatDto: CreateSeatDto;
+}
+
+export interface IShowsServiceCancelReservationShow {
+  userId: string;
+  seatReservationId: string;
 }

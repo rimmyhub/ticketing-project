@@ -1,23 +1,19 @@
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { CreateShowDto } from './dto/create-show.dto';
-import { UpdateShowDto } from './dto/update-show.dto';
 import {
+  IShowsServiceCancelReservationShow,
   IShowsServiceCreateShow,
   IShowsServiceDeleteShow,
   IShowsServiceFindByShowId,
   IShowsServiceFindMyShow,
   IShowsServiceFindOneShow,
   IShowsServiceFindShow,
-  IShowsServiceGetAvailableSeat,
   IShowsServiceSeatReservationSeat,
   IShowsServiceUpdateShow,
 } from './interfaces/shows-service.interface';
@@ -30,44 +26,22 @@ import { SearchReqDto } from 'src/commons/dto/page-req.dto';
 import { Seat } from '../seats/entities/seat.entity';
 import { Reservation } from '../reservations/entities/reservation.entity';
 import { SeatReservation } from '../reservations/entities/seat-reservation.entity';
-import { ReservationsService } from '../reservations/reservations.service';
-import { SeatsService } from '../seats/seats.service';
+import { User } from '../users/entities/user.entity';
+import { Point } from '../points/entities/point.entity';
 
 @Injectable()
 export class ShowsService {
   constructor(
     @InjectRepository(Show)
     private readonly showsRepository: Repository<Show>,
-    @InjectRepository(SeatReservation)
-    private readonly seatReservationsRepository: Repository<SeatReservation>,
-    @InjectRepository(Reservation)
-    private readonly reservationsRepository: Repository<Reservation>,
-    @Inject(forwardRef(() => ReservationsService))
-    private readonly reservationsService: ReservationsService,
     private readonly usersService: UsersService,
-    private readonly seatsService: SeatsService,
     private readonly dataSource: DataSource, // dataSource를 주입
   ) {}
-
-  // // 예매 가능 좌석확인
-  // async getAvailableSeats({
-  //   userId,
-  //   showId,
-  // }: IShowsServiceGetAvailableSeat): Promise<Seat[]> {
-  //   const show = await this.showsRepository.findOneOrFail({
-  //     where: { showId },
-  //     relations: ['seats'],
-  //   });
-
-  //   const availableSeats = show.seats.filter((seat) => !seat.reserved);
-  //   return availableSeats;
-  // }
 
   // 공연 좌석 지정해서 예매
   async seatReservation({
     userId,
     showId,
-    createReservationDto,
     createSeatDto,
   }: IShowsServiceSeatReservationSeat) {
     const queryRunner = this.dataSource.createQueryRunner(); // queryRunner 생성
@@ -77,52 +51,131 @@ export class ShowsService {
     try {
       const manager = queryRunner.manager;
 
-      const show = await this.findByShowId({ showId });
-      if (!show) throw new NotFoundException('공연을 찾을 수 없습니다.');
-
-      const user = await this.usersService.findById({ userId });
+      const user = await manager.findOne(User, { where: { id: userId } });
       if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
-      // 예약정보 생성
-      const reservation = await this.reservationsService.createReservation({
-        userId: userId,
-        showId: showId,
-        createReservationDto: createReservationDto,
+      const show = await manager.findOne(Show, { where: { id: showId } });
+      if (!show) throw new NotFoundException('공연을 찾을 수 없습니다.');
+
+      // 예약정보 생성하고 저장
+      const reservation = await manager.save(Reservation, {
+        user: { id: userId },
+        show: { id: showId },
       });
 
-      // 좌석 생성
-      const seat = await this.seatsService.createSeat({
-        userId: userId,
-        showId: showId,
-        createSeatDto: createSeatDto,
+      const userPoint = await manager.findOne(Point, {
+        where: {
+          user: { id: userId },
+        },
       });
 
-      // 좌석 예약 정보 생성
-      const seatReservations: SeatReservation[] = [];
+      const { price } = createSeatDto; // 가격
+      let pointValue = userPoint.point; // 유저의 포인트
+
+      // 유저 포인트가 있을 때 가격보다 적으면 부족하다고 반환
+      if (userPoint) {
+        if (pointValue < price) {
+          await queryRunner.rollbackTransaction();
+          throw new Error('사용자의 포인트가 부족합니다.');
+        } else {
+          // 포인트를 차감
+          pointValue -= price;
+
+          // 사용자의 포인트를 업데이트
+          await manager.save(Point, userPoint);
+        }
+      }
+
+      // 좌석 생성하고 저장
+      const seat = await manager.save(Seat, {
+        user: { id: userId },
+        show: { id: showId },
+        ...createSeatDto,
+      });
+
+      // Seat 엔티티에서 seatId와 일치하는 좌석을 검색
+      // 검색된 좌석을 확인하고, 만약 좌석이 존재하지 않으면 롤백하고 예외
+      const seatReservations = [];
       for (const seatId of createSeatDto.seatInfo) {
-        const seat = await this.seatsService.findBySeatId({ seatId });
-        if (!seat) {
+        const seats = await manager.find(Seat, { where: { id: seatId } });
+        if (!seats) {
           await queryRunner.rollbackTransaction(); // 롤백
           throw new Error(`${seatId} 좌석 ID를 찾을 수 없습니다.`);
         }
 
-        // 좌석 예약 정보 생성
-        const seatReservation = this.seatReservationsRepository.create({
+        // 좌석 예약 정보를 생성하고 저장
+        const seatReservation = await manager.save(SeatReservation, {
           reservation,
           seat,
+          user,
         });
         seatReservations.push(seatReservation);
       }
 
-      await this.seatReservationsRepository.save(seatReservations); // 좌석 예약 정보 저장
-
       await queryRunner.commitTransaction(); // 모든 동작이 정상적으로 수행되었을 경우 커밋을 수행
-      return reservation;
+      return { userPoint, seatReservations };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error; // 동작 중간에 에러가 발생할 경우엔 롤백
     } finally {
       await queryRunner.release(); // queryRunner는 생성한 뒤 반드시 release 해줘야함
+    }
+  }
+
+  // 예매 취소
+  async cancelReservation({
+    userId,
+    seatReservationId,
+  }: IShowsServiceCancelReservationShow) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const manager = queryRunner.manager;
+
+      const seatReservation = await manager.findOne(SeatReservation, {
+        where: { id: seatReservationId },
+        relations: ['reservation', 'seat', 'user'],
+      });
+
+      if (!seatReservation)
+        throw new NotFoundException('예약 내역을 찾을 수 없습니다.');
+
+      if (seatReservation.reservation.isCanceled === true) {
+        throw new BadRequestException('이미 취소된 예매 내역입니다.');
+      }
+      if (seatReservation.user.id !== userId) {
+        throw new ForbiddenException('예매를 취소할 권한이 없습니다.');
+      }
+
+      // 포인트 반환하기
+      const userPoint = await manager.findOne(Point, {
+        where: { user: { id: userId } },
+      });
+
+      if (!userPoint) {
+        throw new NotFoundException('사용자의 포인트 정보를 찾을 수 없습니다.');
+      }
+      const pointsToReturn = seatReservation.seat.price; // 좌석 가격
+      userPoint.point += pointsToReturn; // 사용자 포인트 업데이트
+      await manager.save(Point, userPoint);
+
+      // 좌석 예약 정보를 업데이트하여 취소 표시
+      await manager.remove(SeatReservation, seatReservation);
+
+      seatReservation.reservation.isCanceled = true;
+      await manager.save(Reservation, seatReservation.reservation);
+
+      await queryRunner.commitTransaction(); // 모든 동작이 정상적으로 수행되었을 경우 커밋을 수행
+      return {
+        message: '예매가 취소되었습니다. 환불된 포인트: ' + pointsToReturn,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction(); // 예외 발생 시 롤백
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
