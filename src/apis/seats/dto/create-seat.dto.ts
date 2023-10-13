@@ -1,5 +1,4 @@
-import { IsInt, IsNotEmpty } from 'class-validator';
-import { GRADE } from 'src/commons/enum/seat.enum';
+import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateSeatDto {
   @IsNotEmpty()
@@ -7,7 +6,8 @@ export class CreateSeatDto {
   seatNumber: number;
 
   @IsNotEmpty()
-  grade: GRADE;
+  @IsString()
+  grade: string;
 
   @IsNotEmpty()
   @IsInt()

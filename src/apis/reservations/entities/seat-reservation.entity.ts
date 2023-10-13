@@ -1,5 +1,6 @@
 import { Reservation } from 'src/apis/reservations/entities/reservation.entity';
 import { Seat } from 'src/apis/seats/entities/seat.entity';
+import { User } from 'src/apis/users/entities/user.entity';
 import {
   CreateDateColumn,
   DeleteDateColumn,
@@ -32,4 +33,9 @@ export class SeatReservation {
     onDelete: 'CASCADE',
   })
   seat: Seat;
+
+  @ManyToOne(() => User, (user) => user.seatReservations, {
+    onDelete: 'CASCADE',
+  })
+  user: User;
 }

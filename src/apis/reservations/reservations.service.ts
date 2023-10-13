@@ -41,13 +41,13 @@ export class ReservationsService {
     const show = await this.showsService.findByShowId({ showId });
     if (!show) throw new NotFoundException('공연을 찾을 수 없습니다.');
 
-    // // 만약 보유 포인트가 30000보다 작으면 에러 반환
-    // if (user.points[0].point < 30000)
-    //   throw new ForbiddenException('포인트가 부족합니다.');
-    // // ForbiddenException 라이언트 요청이 서버에서 거부되는 경우
+    // 만약 보유 포인트가 30000보다 작으면 에러 반환
+    if (user.points[0].point < 30000)
+      throw new ForbiddenException('포인트가 부족합니다.');
+    // ForbiddenException 라이언트 요청이 서버에서 거부되는 경우
 
-    // // 그게 아니면 포인트 30000을 빼기!
-    // user.points[0].point -= 30000;
+    // 그게 아니면 포인트 30000을 빼기!
+    user.points[0].point -= 30000;
 
     // 저장
     return await this.reservationsRepository.save({
